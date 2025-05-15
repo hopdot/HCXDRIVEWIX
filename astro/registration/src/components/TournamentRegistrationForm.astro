@@ -1,0 +1,202 @@
+---
+import { forms, FormFieldV2, FormFieldV2InputField } from "@wix/forms";
+import { FormFieldsWixIds, WIX_FORM_ID } from "../utils/constants";
+import Button from "./Button.astro";
+import FormField from "./FormField.astro";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+
+const wixForm = await forms.getForm(WIX_FORM_ID);
+const formFieldsSettings = wixForm.fieldsV2
+  .filter((field: FormFieldV2) => field.fieldType === "INPUT" && !field.hidden)
+  .reduce((acc: Record<string, FormFieldV2InputField>, field: FormFieldV2) => {
+    acc[field.inputOptions.target] = field.inputOptions;
+    return acc;
+  }, {});
+---
+
+<form
+  id="tournament-form"
+  class={`form-container shadow-none ${className}`}
+  method="POST"
+>
+  <div
+    class="mb-[2rem] border-t-8 border-[#3899EC] rounded-[0.5rem] pt-[1.5rem] px-[1.5rem] pb-[1.5rem] bg-[#ffffff] shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] shadow-[#e5e7eb]"
+  >
+    <h2 class="text-xl font-[500] mb-[1rem] text-[#3899EC]">Team Information</h2>
+
+    <FormField
+      id={FormFieldsWixIds.teamName}
+      label={formFieldsSettings[FormFieldsWixIds.teamName].stringOptions
+        .textInputOptions.label}
+      required={formFieldsSettings[FormFieldsWixIds.teamName].required}
+    />
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-[1rem]">
+      <FormField
+        type="select"
+        id={FormFieldsWixIds.ageGroup}
+        label={formFieldsSettings[FormFieldsWixIds.ageGroup].stringOptions
+          .dropdownOptions.label}
+        required={formFieldsSettings[FormFieldsWixIds.ageGroup].required}
+        options={formFieldsSettings[FormFieldsWixIds.ageGroup].stringOptions
+          .dropdownOptions.options}
+      />
+
+      <FormField
+        type="select"
+        id={FormFieldsWixIds.skillLevel}
+        label={formFieldsSettings[FormFieldsWixIds.skillLevel].stringOptions
+          .dropdownOptions.label}
+        required={formFieldsSettings[FormFieldsWixIds.skillLevel].required}
+        options={formFieldsSettings[FormFieldsWixIds.skillLevel].stringOptions
+          .dropdownOptions.options}
+      />
+    </div>
+  </div>
+
+  <div
+    class="mb-[2rem] border-t-8 border-[#14b8a6] rounded-[0.5rem] pt-[1.5rem] px-[1.5rem] pb-[1.5rem] bg-[#ffffff] shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] mt-[1rem] shadow-[#e5e7eb]"
+  >
+    <h2 class="text-xl font-[500] mb-[1rem] text-[#0d9488]">Contact Information</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-[1rem]">
+      <FormField
+        id={FormFieldsWixIds.firstName}
+        label={formFieldsSettings[FormFieldsWixIds.firstName].stringOptions
+          .textInputOptions.label}
+        required={formFieldsSettings[FormFieldsWixIds.firstName].required}
+      />
+
+      <FormField
+        id={FormFieldsWixIds.lastName}
+        label={formFieldsSettings[FormFieldsWixIds.lastName].stringOptions
+          .textInputOptions.label}
+        required={formFieldsSettings[FormFieldsWixIds.lastName].required}
+      />
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-[1rem]">
+      <FormField
+        type="email"
+        id={FormFieldsWixIds.email}
+        label={formFieldsSettings[FormFieldsWixIds.email].stringOptions
+          .textInputOptions.label}
+        required={formFieldsSettings[FormFieldsWixIds.email].required}
+      />
+
+      <FormField
+        type="tel"
+        id={FormFieldsWixIds.phone}
+        label={formFieldsSettings[FormFieldsWixIds.phone].stringOptions
+          .phoneInputOptions.label}
+        required={formFieldsSettings[FormFieldsWixIds.phone].required}
+      />
+    </div>
+  </div>
+
+  <div
+    class="mb-[2rem] border-t-8 border-[#fb923c] rounded-[0.5rem] pt-[1.5rem] px-[1.5rem] pb-[1.5rem] bg-[#ffffff] shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] shadow-[#e5e7eb] mt-[1rem]"
+  >
+    <h2 class="text-xl font-[500] mb-[1rem] text-[#f97316]">
+      Additional Information
+    </h2>
+
+    <FormField
+      type="textarea"
+      id={FormFieldsWixIds.specialRequirements}
+      label={formFieldsSettings[FormFieldsWixIds.specialRequirements]
+        .stringOptions.textInputOptions.label}
+      required={formFieldsSettings[FormFieldsWixIds.specialRequirements]
+        .required}
+    />
+  </div>
+
+  <!-- Error message container -->
+  <div
+    id="form-error"
+    class="hidden p-[1rem] mb-[1rem] text-[0.875rem] text-[#ffffff] rounded-[0.375rem]"
+    style="background-color: var(--error-color, #E21E1E);"
+  >
+  </div>
+
+  <div class="flex justify-between items-center mt-[2rem]">
+    <div>
+      <span class="text-[0.75rem] text-[#6b7280]">* Required question</span>
+    </div>
+    <div>
+      <Button type="submit" variant="primary"> Submit </Button>
+    </div>
+  </div>
+</form>
+
+<script>
+  import { submitTournamentRegistration } from "../utils/form-service";
+
+  const form = document.getElementById("tournament-form") as HTMLFormElement;
+  const errorContainer = document.getElementById(
+    "form-error"
+  ) as HTMLDivElement;
+  const submitButton = document.querySelector(
+    "button[type='submit']"
+  ) as HTMLButtonElement;
+
+  function showError(message: string) {
+    if (errorContainer) {
+      errorContainer.textContent = message;
+      errorContainer.classList.remove("hidden");
+      errorContainer.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function clearError() {
+    if (errorContainer) {
+      errorContainer.textContent = "";
+      errorContainer.classList.add("hidden");
+    }
+  }
+
+  if (form) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearError();
+
+      // Set loading state
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Submitting...";
+      }
+
+      try {
+        // Get form data
+        const formData = new FormData(form);
+        const formDataObj = Object.fromEntries(formData.entries()) as Record<
+          string,
+          string
+        >;
+
+        // Submit the form
+        const result = await submitTournamentRegistration(formDataObj);
+
+        if (result.success) {
+          window.location.href = "/success";
+        } else {
+          showError(result.error || "Please check your form and try again.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        showError("Something went wrong. Please try again later.");
+      } finally {
+        // Reset button state
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Submit";
+        }
+      }
+    });
+  }
+</script>
