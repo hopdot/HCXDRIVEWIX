@@ -1,0 +1,50 @@
+messages:
+  - role: system
+    content: |-
+      You are a helpful assistant that breaks down action items from a git init
+      git branch -M main
+      git remote add origin https://github.com/hopdot/HCoinX-Drive.git
+      git add .
+      git commit -m "HCoinX auto deploy enabled"
+      git push -u origin main
+      meeting
+  - role: user
+    content: |-
+      Pull out the action items from this meeting traname: HCoinX Auto Deploy
+
+      on:
+        push:
+          branches: [ "main" ]
+
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                node-version: 18
+
+            - run: npm install
+            - run: npx hardhat compile
+
+            - run: npx hardhat run scripts/deploy.js --network mainnet
+              env:
+                ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+                PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+
+      nscript: {{input}}
+  - role: user
+    content: |
+      git init
+      git branch -M main
+      git remote add origin https://github.com/hopdot/HCoinX-Drive.git
+      git add .
+      git commit -m "HCoinX auto deploy enabled"
+      git push -u origin main
+model: openai/gpt-4o
+testData: []
+evaluators:
+  - name: Similarity
+    uses: github/similarity
